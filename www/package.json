@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@zoon/puphpeteer": "git+https://git@github.com/zoonru/puphpeteer.git#zoon",
+    "puppeteer": "^24.10.0"
+  }
+}

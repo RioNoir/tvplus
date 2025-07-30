@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  tvplus:
+    #platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tvplus
+    hostname: tvplus
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - GUID=1000
+      - TZ=Europe/Rome
+      - APP_ENV=local           #Only for development
+      - APP_DEBUG=true          #Only for development
+    volumes:
+      - ./www:/var/www          #Only for development
+      - ./src:/var/src          #Only for development
+      - ./data:/data
+    ports:
+      - "8098:8098"
+      - "4444:4444"

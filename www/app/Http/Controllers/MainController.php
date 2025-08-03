@@ -60,7 +60,47 @@ class MainController extends Controller
 
     public function getIndex(){
         $url = "http://localhost:8098/iframe";
-        $host = 'http://localhost:4444';
+        $driver = self::driver();
+
+        $driver->get($url);
+
+        // Opzionale: Screenshot per debug (utile per vedere cosa "vede" il browser)
+        // Assicurati che la cartella 'storage/app' sia scrivibile dal processo del container.
+        // $this->driver->takeScreenshot(storage_path('app/pre_iframe_screenshot.png'));
+        // $this->info("Screenshot della pagina prima dell'iframe salvato in storage/app/pre_iframe_screenshot.png.");
+
+        // 5. Attendi che l'iframe sia presente e visibile nel DOM
+        // Sostituisci 'iframe' con un selettore più specifico (ID, name, classe CSS) se ne hai più di uno
+        $driver->wait(30, 1000)->until( // Attendi fino a 30 secondi, controllando ogni 1 secondo
+            WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('iframe'))
+        );
+
+        // 6. Passa al contesto dell'iframe
+        // Puoi usare l'ID dell'iframe, il nome, o l'elemento stesso
+        // Esempio con un selettore CSS:
+        $iframeElement = $driver->findElement(WebDriverBy::cssSelector('iframe'));
+        $driver->switchTo()->frame($iframeElement); // Passa al contesto dell'iframe
+
+        // 7. Attendi che gli elementi specifici all'interno dell'iframe siano caricati e visibili
+        // Sostituisci '#myElementInIframe' e '.itemClassInIframe' con i selettori reali
+        $driver->wait(30, 1000)->until(
+            WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('.matches-container'))
+        );
+
+        // 8. Estrai i dati dall'iframe
+        $extractedText = $driver->findElement(WebDriverBy::cssSelector('.matches-container'))->getText();
+
+        // Esempio: Estrai tutti gli elementi con una certa classe e itera su di essi
+        $listItems = $driver->findElements(WebDriverBy::cssSelector('.match-category'));
+
+        foreach ($listItems as $index => $item) {
+            echo "Elemento lista #" . ($index + 1) . ": " . $item->getText()."<br>";
+        }
+    }
+
+    public function getIndex4(){
+        $url = "http://localhost:8098/iframe";
+        $host = 'http://localhost:9515';
 
         // 1. Configura le capacità per Chrome
         $capabilities = DesiredCapabilities::chrome();
@@ -92,7 +132,7 @@ class MainController extends Controller
 
         //$this->info("Inizializzazione WebDriver per l'URL: " . $url);
 
-        try {
+        //try {
             // 3. Crea una nuova sessione WebDriver
             $driver = RemoteWebDriver::create($host, $capabilities);
 
@@ -147,11 +187,11 @@ class MainController extends Controller
             //$this->driver->switchTo()->defaultContent();
             //$this->info("Tornato al contesto della pagina principale.");
 
-        } catch (\Exception $e) {
-            echo "Errore durante lo scraping: " . $e->getMessage();
-            echo "Stack Trace: " . $e->getTraceAsString();
-            //return Command::FAILURE;
-        }
+        // } catch (\Exception $e) {
+        //     echo "Errore durante lo scraping: " . $e->getMessage();
+        //     echo "Stack Trace: " . $e->getTraceAsString();
+        //     //return Command::FAILURE;
+        // }
 //        finally {
 //            // 10. Chiudi il browser alla fine, anche in caso di errori
 //            if ($driver) {

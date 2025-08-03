@@ -63,13 +63,11 @@ RUN apt-get install -y \
     libxshmfence-dev \
     # Chromium dependencies:
     libgbm-dev \
-    # XVFB and other X-server utilities
     xvfb \
     x11-xkb-utils \
     xfonts-base \
     xauth \
     procps \
-    # Per eseguire Chrome/Chromium:
     locales \
     gconf-service \
     libasound2 \
@@ -92,10 +90,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# --- Installazione di Chromium e ChromeDriver ---
+# Install Chrome & Chromedriver
 
-# Step 1: Installazione delle dipendenze di sistema per Chromium.
-# Questi pacchetti sono essenziali per far funzionare Chromium in un ambiente headless Linux.
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -108,41 +104,28 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 \
     libgbm-dev \
     # Pulisce la cache apt per ridurre la dimensione finale dell'immagine
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
-    # Definisci la variabile URL direttamente qui
     CHROME_VERSION_URL="https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"; \
     \
-    # Scarica le informazioni sulle versioni disponibili
     wget -qO /tmp/chrome_versions.json "$CHROME_VERSION_URL"; \
-    \
-    # Estrai l'ultima versione stabile di Chrome per Linux ARM64
     CHROME_URL=$(jq -r '.channels.Stable.downloads.chrome[] | select(.platform == "linux64") | .url' /tmp/chrome_versions.json); \
     if [ -z "$CHROME_URL" ]; then echo "Errore: URL di Chrome per linux64 non trovato."; exit 1; fi; \
-    \
-    # Estrai l'ultima versione stabile di ChromeDriver per Linux ARM64
     CHROMEDRIVER_URL=$(jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform == "linux64") | .url' /tmp/chrome_versions.json); \
     if [ -z "$CHROMEDRIVER_URL" ]; then echo "Errore: URL di ChromeDriver per linux64 non trovato."; exit 1; fi; \
     \
-    # Scarica Chromium
-    echo "Scaricando Chromium da: $CHROME_URL"; \
+    # Chrome
     wget -qO /tmp/chrome.zip "$CHROME_URL"; \
     unzip /tmp/chrome.zip -d /opt/; \
-    # Rinominare la cartella per renderla più gestibile, se necessario
     mv /opt/chrome-linux64 /opt/chrome; \
-    # Crea un link simbolico per l'eseguibile di Chrome, utile per Puppeteer/Selenium
     ln -s /opt/chrome/chrome /usr/bin/google-chrome; \
     \
-    # Scarica ChromeDriver
-    echo "Scaricando ChromeDriver da: $CHROMEDRIVER_URL"; \
+    # Chromedriver
     wget -qO /tmp/chromedriver.zip "$CHROMEDRIVER_URL"; \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/; \
-    # ChromeDriver-linux64/chromedriver è la struttura tipica, quindi lo spostiamo e lo rendiamo eseguibile
     mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/; \
     chmod +x /usr/local/bin/chromedriver; \
-    \
-    # Pulizia
     rm /tmp/chrome_versions.json /tmp/chrome.zip /tmp/chromedriver.zip; \
     rm -rf /usr/local/bin/chromedriver-linux64;
 
@@ -154,11 +137,6 @@ RUN python3 -m venv /var/python/venv
 
 #Install MediaFlowProxy
 RUN /var/python/venv/bin/pip install mediaflow-proxy
-
-#Install crawl4ai
-RUN /var/python/venv/bin/pip install crawl4ai && \
-    /var/python/venv/bin/pip install parsel && \
-    /var/python/venv/bin/crawl4ai-setup
 
 # Set working directory
 WORKDIR $WORKDIR
